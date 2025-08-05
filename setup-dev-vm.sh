@@ -1,50 +1,3 @@
-Understood. We will now create the final, all-inclusive script that installs everything we've discussed.
-
-This script will set up a complete, headless development environment by default, including:
-
-  * Core system utilities (`jq`, `htop`, etc.)
-  * Git
-  * Python, pip, and `uv`
-  * Node.js (LTS) and npm
-  * Docker and Docker Compose
-  * **Zsh and the Oh My Zsh framework**, setting it as the default shell.
-
-This is the definitive script based on all your requests.
-
------
-
-### Instructions
-
-1.  **Create the file:**
-
-    ```bash
-    nano setup_dev_env.sh
-    ```
-
-2.  **Copy and Paste:**
-    Copy the entire script below and paste it into the editor.
-
-3.  **Save and Exit:**
-    Press `Ctrl + X`, then `Y`, then `Enter`.
-
-4.  **Make it Executable:**
-
-    ```bash
-    chmod +x setup_dev_env.sh
-    ```
-
-5.  **Run the Script:**
-    Execute it with `sudo`. It will run automatically.
-
-    ```bash
-    sudo ./setup_dev_env.sh
-    ```
-
------
-
-### The Final All-Inclusive Script: `setup_dev_env.sh`
-
-```sh
 #!/bin/bash
 
 # ======================================================================================
@@ -179,4 +132,3 @@ echo "2. After rebooting, configure Git with your name and email."
 echo ""
 echo "Your new default shell will be Zsh. Enjoy the enhanced features!"
 echo "Happy coding!"
-```
