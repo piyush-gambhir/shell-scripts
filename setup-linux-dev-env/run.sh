@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # ======================================================================================
-# (Revised) All-Inclusive Headless Ubuntu Development Environment Setup Script
+# (Final Version) All-Inclusive Headless Ubuntu Development Environment Setup Script
 #
-# This version includes more verbose logging to make troubleshooting easier.
+# This version uses pipx to install uv, which is a best-practice for Python CLI tools.
 # ======================================================================================
 
 # Exit immediately if a command exits with a non-zero status.
@@ -20,12 +20,9 @@ fi
 echo "✅ Sudo check passed."
 
 # Determine the user who will receive the configurations (docker group, zsh shell)
-# This handles cases where the script is run with `sudo` or after `sudo su`.
 if [ -n "$SUDO_USER" ]; then
     RUN_USER=$SUDO_USER
 else
-    # If SUDO_USER is not set, it's likely the root user themselves.
-    # Fallback to the USER variable, but warn the user.
     RUN_USER=$USER
     if [ "$RUN_USER" = "root" ]; then
         echo "⚠️ Warning: Running as root without sudo. Zsh and Docker permissions will be applied to the 'root' user."
@@ -67,22 +64,24 @@ echo ""
 
 
 # =============================================
-# 4. INSTALL PYTHON 3, PIP, VENV, and UV
+# 4. INSTALL PYTHON, PIP, VENV, PIPX, and UV
 # =============================================
-echo "--> Section 4: Installing Python, Pip, Venv, and UV..."
-echo "   - Installing python3-pip and python3-venv..."
-apt-get install -y python3-pip python3-venv
-echo "   - Installing uv using pip..."
-pip3 install uv
+echo "--> Section 4: Installing Python tools..."
+echo "   - Installing python3-pip, python3-venv, and pipx via apt..."
+apt-get install -y python3-pip python3-venv pipx
+
+echo "   - Using pipx to install uv in an isolated, system-wide environment..."
+# We set PIPX_HOME and PIPX_BIN_DIR to install uv globally in a clean way.
+# The binaries will be available in /usr/local/bin for all users.
+export PIPX_HOME=/opt/pipx
+export PIPX_BIN_DIR=/usr/local/bin
+pipx install uv
+
 echo "   - Verifying installations..."
 python3 --version
 pip3 --version
-# The uv binary is installed to the root user's local bin when run with sudo.
-if [ -f "/root/.local/bin/uv" ]; then
-    /root/.local/bin/uv --version
-else
-    echo "⚠️ Warning: uv executable not found at /root/.local/bin/uv"
-fi
+pipx --version
+uv --version
 echo "✅ Section 4 Complete."
 echo ""
 
