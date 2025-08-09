@@ -9,6 +9,9 @@
 # DO NOT RUN THIS SCRIPT WITH SUDO.
 # ======================================================================================
 
+set -euo pipefail
+IFS=$'\n\t'
+
 echo "============================================="
 echo "   GitHub PAT Credential Setup Utility"
 echo "============================================="
@@ -16,11 +19,17 @@ echo "This script will configure Git to use a Personal Access Token (PAT)."
 echo "Please have your PAT, GitHub username, and repository URL ready."
 echo ""
 
+# Prevent running with sudo/root
+if [ "${EUID:-$(id -u)}" -eq 0 ] || [ -n "${SUDO_USER:-}" ]; then
+  echo "❌ Do not run this script with sudo or as root. Run as your regular user."
+  exit 1
+fi
+
 # --- Step 1: Gather User Input ---
 read -p "Enter your GitHub username: " GITHUB_USERNAME
 
 # The -s flag makes input "silent" so the token is not displayed on screen
-read -s -p "Enter your GitHub Personal Access Token (ghp_...): " GITHUB_TOKEN
+read -s -p "Enter your GitHub Personal Access Token (starts with 'gh'): " GITHUB_TOKEN
 echo "" # Add a newline after the silent prompt
 
 read -p "Enter the full HTTPS URL of the repository to clone (e.g., https://github.com/user/repo.git): " REPO_URL
@@ -34,25 +43,26 @@ fi
 
 # --- Step 3: Configure Git Credential Helper ---
 echo ""
-echo "--> Configuring Git to use the 'store' credential helper..."
+echo "--> Configuring Git credential helper to 'store' (plaintext in ~/.git-credentials)..."
+echo "    Tip: Consider using GitHub CLI (gh) or a keyring helper for better security."
 git config --global credential.helper store
 echo "✅ Git credential helper configured."
 echo ""
 
-# --- Step 4: Clone the Repository to Cache Credentials ---
-echo "--> Cloning the repository to test and cache your credentials..."
-echo "    (Your token will be used for this command but not stored in shell history)"
+# --- Step 4: Pre-approve credentials securely (avoid embedding token in remote URL) ---
+echo "--> Storing credentials for github.com in the credential store..."
+cat <<EOF | git credential approve
+protocol=https
+host=github.com
+username=${GITHUB_USERNAME}
+password=${GITHUB_TOKEN}
+EOF
+echo "✅ Credentials stored for github.com."
+echo ""
 
-# Construct the authenticated URL
-# This replaces "https://github.com" with "https://username:token@github.com"
-AUTH_REPO_URL=$(echo "$REPO_URL" | sed "s|://|://$GITHUB_USERNAME:$GITHUB_TOKEN@|")
-
-# Clone the repository
-git clone "$AUTH_REPO_URL"
-
-# --- Step 5: Verify the Outcome ---
-if [ $? -eq 0 ]; then
-    # $? is the exit code of the last command. 0 means success.
+# --- Step 5: Clone the repository using clean URL ---
+echo "--> Cloning the repository..."
+if git clone "$REPO_URL"; then
     echo ""
     echo "======================================================================="
     echo "🎉 SUCCESS! The repository was cloned and your token is now cached."
@@ -67,5 +77,6 @@ else
     echo "Please check the following:"
     echo "  1. Is the repository URL correct?"
     echo "  2. Is your Personal Access Token correct?"
-    echo "  3. Does your token have the correct 'Contents: Read and write' permissions for that specific repository?"
+    echo "  3. Does your token have the correct permissions for the repository?"
+    exit 1
 fi
